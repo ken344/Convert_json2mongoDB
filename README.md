@@ -1,1 +1,21 @@
 # Convert_json2mongoDB
+### Memo
+- 中で使っている「mongoimport」を使用するためには、mongodb-database-toolsをインストールする必要がある。
+  - https://www.mongodb.com/docs/database-tools/installation/installation-macos/
+- mongoimportの使い方
+  - https://docs.mongodb.com/database-tools/mongoimport/
+- コマンドラインからのmongodb操作
+    - mongoshのインストール
+        - brew install mongosh
+            - https://www.mongodb.com/docs/mongodb-shell/install/
+    - mongoshでの接続
+      - mongosh mongodb://localhost:27017/todofuken-db --username mongo
+        - password >  mongo
+    - mongosh操作
+      - 参考：https://www.wakuwakubank.com/posts/784-server-mongodb-introduction/
+      - よく使いそうな奴
+        - show dbs
+        - use todofuken-db
+        - show collections
+        - db.todofuken.find()
+        - db.todofuken.find({todofuken: "北海道"})

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 type mongoParams struct {
@@ -17,8 +18,21 @@ type mongoParams struct {
 	collection string
 }
 
+func newMongoParams(host string, user string, password string, database string, collection string) *mongoParams {
+	mg := new(mongoParams)
+	mg.host = host
+	mg.user = user
+	mg.password = password
+	mg.database = database
+	mg.collection = collection
+	return mg
+}
+
+// jsonファイルをmongoDBにインポートする
 func (m mongoParams) importJson(filePath string) {
-	cmd := exec.Command("mongoimport", "-u", m.user, "-p", m.password, "--db", m.database, "--collection", m.collection, "--file", filePath, "--jsonArray")
+	// mongoimportを使用するためには、mongodb-database-toolsをインストールする必要がある。
+	//https://www.mongodb.com/docs/database-tools/installation/installation-macos/
+	cmd := exec.Command("/usr/local/bin/mongoimport", "-h", m.host, "-u", m.user, "-p", m.password, "--db", m.database, "--collection", m.collection, "--file", filePath, "--jsonArray")
 	out, err := cmd.Output()
 	if err != nil {
 		log.Fatal(err)
@@ -26,15 +40,16 @@ func (m mongoParams) importJson(filePath string) {
 	fmt.Printf(string(out))
 }
 
-func SetDotenv() {
-	err := godotenv.Load()
+// .envファイルを読み込む
+func SetDotenv(envPath string) {
+	err := godotenv.Load(envPath)
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 }
 
 // ファイルのパスを取得して配列にする。
-func getFilePaths(dirPath string, keyword string) []string {
+func getFilePaths(dirPath string, extensionName string) []string {
 	// ファイルのパスを格納する配列
 	var filePaths []string
 
@@ -49,8 +64,8 @@ func getFilePaths(dirPath string, keyword string) []string {
 			return nil
 		}
 
-		// ファイル名にkeywordが含まれている場合は配列に格納する
-		if filepath.Base(path) == keyword {
+		// 拡張子がにextensionNameであった場合は配列に格納する
+		if strings.EqualFold(filepath.Ext(path), "."+extensionName) {
 			filePaths = append(filePaths, path)
 		}
 
@@ -66,20 +81,18 @@ func getFilePaths(dirPath string, keyword string) []string {
 
 func main() {
 
-	SetDotenv()
-	mongoClient := mongoParams{
-		host:       os.Getenv("MONGO_HOST"),
-		user:       os.Getenv("MONGO_USER"),
-		password:   os.Getenv("MONGO_PASSWORD"),
-		database:   os.Getenv("MONGO_DATABASE"),
-		collection: os.Getenv("MONGO_COLLECTION"),
-	}
+	// .envファイルを読み込む/
+	SetDotenv("../../.env")
+	//import用の構造体を作成する
+	mongoImport := newMongoParams(os.Getenv("MONGO_HOST"), os.Getenv("MONGO_USER"), os.Getenv("MONGO_PASSWORD"), os.Getenv("MONGO_DATABASE"), os.Getenv("MONGO_COLLECTION"))
 
+	// 指定したディレクトリ内に存在するファイルから、指定した拡張子のファイルのパスを配列に格納する
 	targetDirPath := "../../input_data/"
-	choiceKey := "json"
-	jsonFilePath := getFilePaths(targetDirPath, choiceKey)
+	choiceExtensionName := "json"
+	jsonFilePath := getFilePaths(targetDirPath, choiceExtensionName)
 
+	// jsonファイルをmongoDBにインポートする
 	for _, filePath := range jsonFilePath {
-		mongoClient.importJson(filePath)
+		mongoImport.importJson(filePath)
 	}
 }
