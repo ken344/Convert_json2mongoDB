@@ -6,17 +6,17 @@
 ##
 ## Build
 ##
-FROM golang:1.16-buster AS build
+FROM golang:1.21.3-bullseye AS build
 
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
+COPY ../mongoctl/go.sum ./
+COPY ../mongoctl/go.mod ./
 RUN go mod download
 
-COPY *.go ./
+COPY ../mongoctl/importjson/*.go ./
 
-RUN go build -o /docker-gs-ping
+RUN go build -o /importjson
 
 ##
 ## Deploy
@@ -25,7 +25,7 @@ FROM gcr.io/distroless/base-debian10
 
 WORKDIR /
 
-COPY --from=build /docker-gs-ping /docker-gs-ping
+COPY --from=build /importjson /importjson
 
 EXPOSE 8080
 
